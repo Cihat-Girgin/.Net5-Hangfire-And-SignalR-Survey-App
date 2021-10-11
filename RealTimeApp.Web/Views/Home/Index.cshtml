@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<div id="top_x_div" style="width: 900px; height: 500px;"></div>
+@section Scripts{
+    <script src="~/lib/microsoft-signalr/signalr.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(() => {
+
+            var surveyItemlist = new Array();
+            surveyItemlist.push(["BackendFramework", "Rate"]);
+            var connection = new signalR.HubConnectionBuilder().withUrl("https://localhost:44310/MainHub").build();
+            connection.start().then(() => {
+                connection.invoke("GetSurveyDataset");
+            }).catch((err) => {
+                console.log(err);
+            });
+            connection.on("SurveyDataset", (list) => {
+                surveyItemlist = surveyItemlist.splice(0, 1);
+                list.forEach((item) => {
+                    surveyItemlist.push([item.name,item.count])
+                })
+                google.charts.load('current', { 'packages': ['bar'] });
+                google.charts.setOnLoadCallback(drawStuff);
+            })
+
+            function drawStuff() {
+                var data = google.visualization.arrayToDataTable(surveyItemlist);
+
+                var options = {
+                    title: 'Popular Backend Framework',
+                    width: 900,
+                    legend: { position: 'none' },
+                    chart: {
+                        title: 'Chess opening moves',
+                        subtitle: 'popularity by percentage'
+                    },
+                    bars: 'horizontal', // Required for Material Bar Charts.
+                    axes: {
+                        x: {
+                            0: { side: 'top', label: 'Percentage' } // Top x-axis.
+                        }
+                    },
+                    bar: { groupWidth: "90%" }
+                };
+
+                var chart = new google.charts.Bar(document.getElementById('top_x_div'));
+                chart.draw(data, options);
+            };
+        });
+    </script>
+}
+
